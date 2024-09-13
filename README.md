@@ -50,3 +50,51 @@ $ g++ main.o -L. -lmycode -o myprogram  # Линковка с динамичес
 LD_LIBRARY_PATH=. ./myprogram  # Запуск программы. Нужно принудительно указать местоположение библиотеки, иначе ищет в /lib, /usr/lib
 $ Hello from the library!
 ```
+
+4. Можно собрать через Makefile с динамической библиотекой
+```bash
+nano Makefile # команды должны начинаться с табуляции
+# Названия файлов
+TARGET = myprogram
+LIBRARY = libmycode.so
+OBJ_FILES = main.o lib.o
+
+# Компилятор и флаги
+CXX = g++
+CXXFLAGS = -fPIC -Wall
+LDFLAGS = -L. -lmycode
+
+# Правила сборки
+all: $(LIBRARY) $(TARGET)
+
+# Сборка объекта lib.o
+lib.o: lib.cpp
+	$(CXX) $(CXXFLAGS) -c lib.cpp -o lib.o
+
+# Сборка объекта main.o
+main.o: main.cpp
+	$(CXX) -c main.cpp -o main.o
+
+# Сборка динамической библиотеки
+$(LIBRARY): lib.o
+	$(CXX) -shared lib.o -o $(LIBRARY)
+
+# Сборка основной программы
+$(TARGET): main.o $(LIBRARY)
+	$(CXX) main.o -o $(TARGET) $(LDFLAGS)
+
+# Очистка
+clean:
+	rm -f $(OBJ_FILES) $(LIBRARY) $(TARGET)
+
+.PHONY: all clean
+
+$ make
+g++ -fPIC -Wall -c lib.cpp -o lib.o
+g++ -shared lib.o -o libmycode.so
+g++ -c main.cpp -o main.o
+g++ main.o -o myprogram -L. -lmycode
+
+$ LD_LIBRARY_PATH=. ./myprogram
+Hello from the library!
+```
